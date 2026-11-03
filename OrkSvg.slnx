@@ -1,3 +1,6 @@
 <Solution>
+  <Folder Name="/GitHub Workflows/">
+    <File Path=".github/workflows/release.yml" />
+  </Folder>
   <Project Path="OrkSvg.csproj" />
 </Solution>
