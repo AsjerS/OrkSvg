@@ -1,15 +1,10 @@
-using Microsoft.Win32;
 using PuppeteerSharp;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
-using static System.Environment;
 
 namespace OrkSvg;
 
