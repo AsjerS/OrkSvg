@@ -175,15 +175,30 @@ public sealed class RenderCommand : AsyncCommand<RenderSettings>
 
 internal static partial class SvgMetadataParser
 {
+    [GeneratedRegex(
+        @"viewBox\s*=\s*[""']\s*[-+]?[\d.]+[,\s]+[-+]?[\d.]+[,\s]+([-+]?[\d.]+)[,\s]+([-+]?[\d.]+)\s*[""']",
+        RegexOptions.IgnoreCase
+    )]
+    private static partial Regex ViewBoxRegex();
+
+    [GeneratedRegex(
+        @"\bwidth\s*=\s*[""']([\d.]+)p?x?[""']",
+        RegexOptions.IgnoreCase
+    )]
+    private static partial Regex WidthRegex();
+
+    [GeneratedRegex(
+        @"\bheight\s*=\s*[""']([\d.]+)p?x?[""']",
+        RegexOptions.IgnoreCase
+    )]
+    private static partial Regex HeightRegex();
+
     public sealed class SvgParseException(string message) : Exception(message);
 
     public static (double Width, double Height) ExtractDimensions(string svg)
     {
         // try viewbox
-        var viewBoxMatch = Regex.Match(
-            svg,
-            @"viewBox\s*=\s*[""']\s*[-+]?[\d.]+[,\s]+[-+]?[\d.]+[,\s]+([-+]?[\d.]+)[,\s]+([-+]?[\d.]+)\s*[""']",
-            RegexOptions.IgnoreCase);
+        var viewBoxMatch = ViewBoxRegex().Match(svg);
 
         if (
             viewBoxMatch.Success
@@ -202,17 +217,8 @@ internal static partial class SvgMetadataParser
         ) return (vbW, vbH);
 
         // fall back to width/height attributes
-        var wMatch = Regex.Match(
-            svg,
-            @"\bwidth\s*=\s*[""']([\d.]+)p?x?[""']",
-            RegexOptions.IgnoreCase
-        );
-
-        var hMatch = Regex.Match(
-            svg,
-            @"\bheight\s*=\s*[""']([\d.]+)p?x?[""']",
-            RegexOptions.IgnoreCase
-        );
+        var wMatch = WidthRegex().Match(svg);
+        var hMatch = HeightRegex().Match(svg);
 
         if (
             wMatch.Success
