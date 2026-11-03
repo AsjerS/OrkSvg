@@ -24,7 +24,6 @@ public sealed class Program
             config.SetApplicationName("OrkSvg");
             config.SetApplicationVersion(
                 Assembly.GetExecutingAssembly().GetName().Version?.ToString(3)
-                    ?? "unknown"
             );
         });
 
