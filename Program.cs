@@ -63,12 +63,15 @@ public sealed class RenderSettings : CommandSettings
             : Path.GetFullPath(OutputPath);
 
         if (RenderScale <= 0)
-            return ValidationResult.Error("RenderScale must be greater than 0.");
+            return ValidationResult.Error("RenderScale must be greater than 0");
 
-        BrowserPath ??= BrowserLocator.FindSystemBrowser();
+        if (!string.IsNullOrEmpty(BrowserPath))
+        {
+            if (!File.Exists(BrowserPath))
+                return ValidationResult.Error($"Specified browser executable does not exist: '{BrowserPath}'");
 
-        if (string.IsNullOrEmpty(BrowserPath) || !File.Exists(BrowserPath))
-            return ValidationResult.Error("Could not find a valid browser on this machine.");
+            BrowserPath = Path.GetFullPath(BrowserPath);
+        }
 
         return ValidationResult.Success();
     }
@@ -91,11 +94,26 @@ public sealed class RenderCommand : AsyncCommand<RenderSettings>
                 .Spinner(Spinner.Known.Dots)
                 .StartAsync("Initializing Chromium engine...", async ctx =>
                 {
+                    if (string.IsNullOrEmpty(settings.BrowserPath))
+                    {
+                        var fetcher = new BrowserFetcher();
+                        var installedBrowser = fetcher.GetInstalledBrowsers().FirstOrDefault();
+
+                        if (installedBrowser is null)
+                        {
+                            ctx.Status("Downloading Chromium engine...");
+                            installedBrowser = await fetcher.DownloadAsync();
+                        }
+
+                        settings.BrowserPath = installedBrowser!.GetExecutablePath();
+                    }
+
                     ctx.Status("Launching browser...");
                     using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
                     {
                         Headless = true,
                         ExecutablePath = settings.BrowserPath,
+                        Pipe = true,
                         Args =
                         [
                             "--default-background-color=00000000",
@@ -220,109 +238,4 @@ internal static partial class SvgMetadataParser
 
         throw new SvgParseException("Could not find SVG size");
     }
-}
-
-internal static class BrowserLocator
-{
-    public static string? FindSystemBrowser()
-    {
-        if (OperatingSystem.IsWindows())
-            return FindWindowsBrowser();
-
-        if (OperatingSystem.IsMacOS())
-            return FindFirstExisting(
-                [
-                    "Google Chrome.app/Contents/MacOS/Google Chrome",
-                    "Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
-                    "Brave Browser.app/Contents/MacOS/Brave Browser",
-                    "Chromium.app/Contents/MacOS/Chromium"
-                ],
-                [
-                    "/Applications",
-                    Path.Combine(
-                        Environment.GetFolderPath(
-                            Environment.SpecialFolder.UserProfile
-                        ),
-                        "Applications"
-                    )
-                ]
-            );
-
-        if (OperatingSystem.IsLinux())
-            return FindFirstExisting(
-                [
-                    "google-chrome",
-                    "google-chrome-stable",
-                    "chromium",
-                    "chromium-browser",
-                    "microsoft-edge-stable",
-                    "brave-browser"
-                ],
-                (Environment.GetEnvironmentVariable("PATH") ?? "")
-                    .Split(
-                        Path.PathSeparator,
-                        StringSplitOptions.RemoveEmptyEntries
-                    )
-            );
-
-        return null;
-    }
-
-    [SupportedOSPlatform("windows")]
-    private static string? FindWindowsBrowser()
-    {
-        var path = ((string[])[
-            "chrome.exe",
-            "brave.exe",
-            "msedge.exe"
-        ])
-            .Select(exe =>
-                Registry.GetValue(
-                    $@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\{exe}",
-                    "",
-                    null
-                ) as string
-                    ?? Registry.GetValue(
-                        $@"HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\{exe}",
-                        "",
-                        null
-                    ) as string)
-            .FirstOrDefault(p => !string.IsNullOrEmpty(p) && File.Exists(p));
-
-        if (path is not null) return path;
-
-        foreach (var root in ((string[])[
-            Path.Combine(
-                Environment.GetFolderPath(
-                    Environment.SpecialFolder.ProgramFilesX86
-                ),
-                @"Microsoft\EdgeWebView\Application"
-            ),
-            Path.Combine(
-                Environment.GetFolderPath(
-                    Environment.SpecialFolder.ProgramFiles
-                ),
-                @"Microsoft\EdgeWebView\Application"
-        )
-        ]))
-        {
-            if (Directory.Exists(root))
-            {
-                var webViewExe = Directory
-                    .EnumerateFiles(
-                        root,
-                        "msedgewebview2.exe",
-                        SearchOption.AllDirectories
-                    )
-                    .FirstOrDefault();
-
-                if (webViewExe is not null) return webViewExe;
-            }
-        }
-
-        return null;
-    }
-
-    private static string? FindFirstExisting(IEnumerable<string> files, IEnumerable<string> directories) =>
-        files.SelectMany(file => directories.Select(dir => Path.Combine(dir, file))).FirstOrDefault(File.Exists);
 }
