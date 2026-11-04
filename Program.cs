@@ -29,20 +29,20 @@ public sealed class Program
 
 public sealed class RenderSettings : CommandSettings
 {
-    [Description("Path to the input SVG file.")]
+    [Description("Path to the input SVG file")]
     [CommandArgument(0, "<INPUT>")]
     public string InputPath { get; set; } = string.Empty;
 
-    [Description("Path to the output PNG file. (Defaults to same name with .png extension)")]
+    [Description("Path to the output PNG file (defaults to the same as the input with a .png extension)")]
     [CommandArgument(1, "[OUTPUT]")]
     public string? OutputPath { get; set; }
 
-    [Description("Rasterization scale multiplier.")]
+    [Description("Rasterization scale multiplier")]
     [CommandOption("-s|--render-scale <SCALE>")]
     [DefaultValue(1.0f)]
     public float RenderScale { get; init; }
 
-    [Description("Path to browser executable.")]
+    [Description("Path to browser executable")]
     [CommandOption("-b|--browser-path <PATH>")]
     public string? BrowserPath { get; set; }
 
@@ -63,7 +63,7 @@ public sealed class RenderSettings : CommandSettings
         if (!string.IsNullOrEmpty(BrowserPath))
         {
             if (!File.Exists(BrowserPath))
-                return ValidationResult.Error($"Specified browser executable does not exist: '{BrowserPath}'");
+                return ValidationResult.Error($"Specified browser executable not found: '{BrowserPath}'");
 
             BrowserPath = Path.GetFullPath(BrowserPath);
         }
@@ -87,7 +87,7 @@ public sealed class RenderCommand : AsyncCommand<RenderSettings>
             await AnsiConsole
                 .Status()
                 .Spinner(Spinner.Known.Dots)
-                .StartAsync("Initializing Chromium engine...", async ctx =>
+                .StartAsync("Initializing Chromium engine", async ctx =>
                 {
                     if (string.IsNullOrEmpty(settings.BrowserPath))
                     {
@@ -96,14 +96,14 @@ public sealed class RenderCommand : AsyncCommand<RenderSettings>
 
                         if (installedBrowser is null)
                         {
-                            ctx.Status("Downloading Chromium engine...");
+                            ctx.Status("Downloading Chromium engine");
                             installedBrowser = await fetcher.DownloadAsync();
                         }
 
                         settings.BrowserPath = installedBrowser!.GetExecutablePath();
                     }
 
-                    ctx.Status("Launching browser...");
+                    ctx.Status("Launching browser");
                     using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
                     {
                         Headless = true,
@@ -119,7 +119,7 @@ public sealed class RenderCommand : AsyncCommand<RenderSettings>
                     });
 
                     ctx.Status(
-                        $"Rasterizing at [yellow]{settings.RenderScale}x[/] scale ({targetWidth}x{targetHeight}px)..."
+                        $"Rendering at [yellow]{settings.RenderScale}x[/] scale ({targetWidth}x{targetHeight}px)"
                     );
 
                     using var page = await browser.NewPageAsync();
@@ -147,7 +147,7 @@ public sealed class RenderCommand : AsyncCommand<RenderSettings>
                         """
                     );
 
-                    ctx.Status("Exporting PNG...");
+                    ctx.Status("Exporting PNG");
                     await page.ScreenshotAsync(settings.OutputPath, new ScreenshotOptions
                     {
                         OmitBackground = true,
@@ -155,19 +155,14 @@ public sealed class RenderCommand : AsyncCommand<RenderSettings>
                     });
                 });
 
-            AnsiConsole.MarkupLine("[green]Render completed successfully![/]");
-            var table = new Table().Border(TableBorder.Rounded);
-            table.AddColumn("[grey]Property[/]");
-            table.AddColumn("[grey]Value[/]");
-            table.AddRow("Output", $"[bold]{settings.OutputPath}[/]");
-            table.AddRow("Resolution", $"{targetWidth} × {targetHeight} px");
+            AnsiConsole.MarkupLine("[green]Render completed successfully[/]");
+            AnsiConsole.MarkupLine($"[grey]Output: {settings.OutputPath}[/]");
 
-            AnsiConsole.Write(table);
             return 0;
         }
         catch (Exception ex)
         {
-            AnsiConsole.MarkupLine($"[red]Fatal Error:[/] {ex.Message}");
+            AnsiConsole.MarkupLine($"[red]Error:[/] {ex.Message}");
             return 1;
         }
     }
