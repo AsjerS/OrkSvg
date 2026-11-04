@@ -13,12 +13,14 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>orksvg</ToolCommandName>
     <PackageId>OrkSvg</PackageId>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>EUPL-1.2</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="PuppeteerSharp" Version="25.15.0" />
     <PackageReference Include="Spectre.Console.Cli" Version="0.57.2" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
     <None Include="ThirdPartyNotices.txt" Pack="true" PackagePath="\" />
   </ItemGroup>
 
