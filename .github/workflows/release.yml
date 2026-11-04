@@ -61,8 +61,15 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: NuGet Login (OIDC)
+      uses: NuGet/login@v1
+      id: login
+      with:
+        user: AsjerS
+
     - name: Publish to NuGet Gallery
       run: >
         dotnet nuget push dist/*.nupkg
+        --api-key ${{ steps.login.outputs.NUGET_API_KEY }}
         --source https://api.nuget.org/v3/index.json
         --skip-duplicate
