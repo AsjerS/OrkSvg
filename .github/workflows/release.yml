@@ -27,11 +27,6 @@ jobs:
         -p:Version=${{ inputs.version }}
         -o dist
 
-    - name: Prepare Unversioned Package
-      shell: pwsh
-      run: |
-        Move-Item dist/*.nupkg dist/OrkSvg.nupkg
-
     - name: Upload Packages
       uses: actions/upload-artifact@v7
       with:
@@ -43,7 +38,13 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
     steps:
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: '10.0.x'
+
     - name: Download all packages
       uses: actions/download-artifact@v8
       with:
@@ -59,3 +60,9 @@ jobs:
         files: dist/*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Publish to NuGet Gallery
+      run: >
+        dotnet nuget push dist/*.nupkg
+        --source https://api.nuget.org/v3/index.json
+        --skip-duplicate
