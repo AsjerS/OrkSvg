@@ -19,6 +19,7 @@
   <ItemGroup>
     <PackageReference Include="PuppeteerSharp" Version="25.15.0" />
     <PackageReference Include="Spectre.Console.Cli" Version="0.57.2" />
+    <None Include="ThirdPartyNotices.txt" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>
