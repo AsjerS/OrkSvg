@@ -33,7 +33,7 @@ public sealed class RenderSettings : CommandSettings
     [CommandArgument(0, "<INPUT>")]
     public string InputPath { get; set; } = string.Empty;
 
-    [Description("Path to the output PNG file (optional, defaults to the same as the input with a .png extension)")]
+    [Description("Path to the output PNG file (defaults to the same as the input with a .png extension)")]
     [CommandArgument(1, "[OUTPUT]")]
     public string? OutputPath { get; set; }
 
