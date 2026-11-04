@@ -33,7 +33,7 @@ public sealed class RenderSettings : CommandSettings
     [CommandArgument(0, "<INPUT>")]
     public string InputPath { get; set; } = string.Empty;
 
-    [Description("Path to the output PNG file (defaults to the same as the input with a .png extension)")]
+    [Description("Path to the output PNG file (optional, defaults to the same as the input with a .png extension)")]
     [CommandArgument(1, "[OUTPUT]")]
     public string? OutputPath { get; set; }
 
@@ -42,9 +42,13 @@ public sealed class RenderSettings : CommandSettings
     [DefaultValue(1.0f)]
     public float RenderScale { get; init; }
 
-    [Description("Path to browser executable")]
+    [Description("Path to browser executable (optional)")]
     [CommandOption("-b|--browser-path <PATH>")]
     public string? BrowserPath { get; set; }
+
+    [Description("Print raw browser logs to the console for debugging")]
+    [CommandOption("-v|--verbose")]
+    public bool Verbose { get; init; }
 
     public override ValidationResult Validate()
     {
@@ -109,12 +113,12 @@ public sealed class RenderCommand : AsyncCommand<RenderSettings>
                         Headless = true,
                         ExecutablePath = settings.BrowserPath,
                         Pipe = true,
+                        DumpIO = settings.Verbose,
                         Args =
                         [
                             "--default-background-color=00000000",
-                            "--no-sandbox",
-                            "--disable-gpu",
-                            "--disable-extensions"
+                            "--disable-extensions",
+                            "--disable-component-update"
                         ]
                     });
 
