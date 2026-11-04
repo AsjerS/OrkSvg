@@ -13,6 +13,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>orksvg</ToolCommandName>
     <PackageId>OrkSvg</PackageId>
+    <PackageLicenseExpression>EUPL-1.2</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>
